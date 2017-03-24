@@ -1,0 +1,12 @@
+{{with package "metago/funcs"}}
+  {{range .Types -}}
+    {{.Name -}}
+    {{range .Fields}}
+      {{.Name}} {{.Type.Name}} {{.Tag -}}
+    {{end -}}
+    {{range .Methods}}
+      {{.Name}}()
+    {{- end}}
+
+  {{end -}}
+{{end}}
