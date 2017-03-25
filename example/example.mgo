@@ -1,4 +1,4 @@
-{{with package "metago/funcs"}}
+{{with package "github.com/jargv/metago/funcs"}}
   {{range .Types -}}
     {{.Name -}}
     {{range .Fields}}
@@ -7,6 +7,5 @@
     {{range .Methods}}
       {{.Name}}()
     {{- end}}
-
   {{end -}}
 {{end}}

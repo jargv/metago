@@ -4,9 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"metago/funcs"
 	"os"
 	"text/template"
+
+	"github.com/jargv/metago/funcs"
 )
 
 func main() {
