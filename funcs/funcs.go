@@ -34,6 +34,12 @@ type Field struct {
 	Tag  string
 }
 
+type Const struct {
+	Name string
+	Type Type
+	// TODO: add Value string
+}
+
 func (p *Package) Types(types ...string) chan *Type {
 	cap := 10
 	filter := func(name string) bool {
@@ -60,6 +66,63 @@ func (p *Package) Types(types ...string) chan *Type {
 			case *ast.TypeSpec:
 				if filter(node.Name.Name) {
 					c <- &Type{node.Name.Name, p, node}
+				}
+				return false
+			default:
+				return true
+			}
+		})
+	}
+
+	go func() {
+		traverse()
+		close(c)
+	}()
+
+	return c
+}
+
+func (p *Package) Consts() chan *Const {
+	c := make(chan *Const, 10)
+	traverse := func() {
+		ast.Inspect(p.pkgNode, func(node ast.Node) bool {
+			switch node := node.(type) {
+			case nil:
+				return false
+
+			case *ast.GenDecl:
+				if node.Tok != token.CONST {
+					return false
+				}
+
+				var prevType ast.Expr
+				for _, spec := range node.Specs {
+					if val, ok := spec.(*ast.ValueSpec); ok {
+						typ := val.Type
+						if typ == nil {
+							typ = prevType
+						}
+						prevType = typ
+
+						fset := token.NewFileSet()
+						buffer := &bytes.Buffer{}
+						err := printer.Fprint(buffer, fset, typ)
+						if err != nil {
+							panic(err)
+						}
+						typeName := string(buffer.Bytes())
+
+						for _, name := range val.Names {
+							c <- &Const{
+								name.Name,
+								Type{
+									typeName,
+									p,
+									nil,
+								},
+							}
+						}
+					}
 				}
 				return false
 			default:
@@ -133,13 +196,13 @@ func (t *Type) Fields() chan *Field {
 				fset := token.NewFileSet()
 				buffer := &bytes.Buffer{}
 				err := printer.Fprint(buffer, fset, node.Type)
+				if err != nil {
+					panic(err)
+				}
 				typ := string(buffer.Bytes())
 				tag := ""
 				if node.Tag != nil {
 					tag = node.Tag.Value
-				}
-				if err != nil {
-					panic(err)
 				}
 				for _, ident := range node.Names {
 					name := ident.Name
