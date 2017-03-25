@@ -1,0 +1,17 @@
+{{/* todo: get "type" and "package" from cli params */}}
+{{$type := "Pill"}}
+{{$package := "github.com/jargv/metago/example"}}
+{{with package $package}}
+func (t {{$type}}) String()string{
+  switch t {
+    {{range .Consts}}
+      {{if (eq .Type.Name $type)}}
+        case {{.Name}}:
+          return "{{.Name}}"
+      {{end}}
+    {{end}}
+    default:
+      return fmt.Sprintf("{{$type}}(%d)", t)
+  }
+}
+{{end}}
